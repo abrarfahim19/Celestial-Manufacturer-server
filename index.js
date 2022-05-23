@@ -18,17 +18,18 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 //Custom MiddleWare
 
+
 //API Calling
 async function run() {
     try {
         await client.connect();
 
         //DataBase Needed For User,Product,Order,Review,Payment
-        const userCollection = client.db('celestial_db').collection('users');
-        const productCollection = client.db('celestial_db').collection('products');
-        const orderCollection = client.db('celestial_db').collection('orders');
-        const reviewCollection = client.db('celestial_db').collection('reviews');
-        const paymentCollection = client.db('celestial_db').collection('payments');
+        const userCollection = client.db('celestial').collection('users');
+        const productCollection = client.db('celestial').collection('products');
+        const orderCollection = client.db('celestial').collection('orders');
+        const reviewCollection = client.db('celestial').collection('reviews');
+        const paymentCollection = client.db('celestial').collection('payments');
 
         //Get User
         app.get('/user', async (req, res) => {
@@ -38,8 +39,20 @@ async function run() {
         });
 
         //Put User
-
-
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const user = req.body;
+            const filter = { email: email };
+            console.log(filter);
+            const options = { upsert: true };
+            const updateDoc = {
+              $set: user,
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+            res.send({ result, token });
+          });
     }
     finally{
 
