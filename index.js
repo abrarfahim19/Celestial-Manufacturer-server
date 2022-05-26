@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 //Port Declaration
 const app = express();
@@ -44,6 +44,19 @@ async function run() {
         const reviewCollection = client.db('celestial').collection('reviews');
         const paymentCollection = client.db('celestial').collection('payments');
 
+
+        //Admin Verify Middle Ware
+        const verifyAdmin = async (req, res, next) => {
+          const requester = req.decoded.email;
+          const requesterAccount = await userCollection.findOne({ email: requester });
+          if (requesterAccount.role === 'admin') {
+            next();
+          }
+          else {
+            res.status(403).send({ message: 'Forbidden' });
+          }
+        };
+
         //Put User
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
@@ -67,33 +80,45 @@ async function run() {
             res.send(users);
         });
 
-        //Make Admin (PUT)
-        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
-            const email = req.params.email;
-            console.log('param email', email);
-            const requester = req.decoded.email;
-            console.log('Requester Email', requester);
-            const requesterAccount = await userCollection.findOne({ email: requester });
-            if (requesterAccount.role === 'admin') {
-              const filter = { email: email };
-              const updateDoc = {
-                $set: { role: 'admin' },
-              };
-              const result = await userCollection.updateOne(filter, updateDoc);
-              res.send(result);
-            }
-            else{
-              res.status(403).send({message: 'forbidden'});
-            }
-      
-          })
+        //Make Admin (PUT) [updated]
+        app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
+          const email = req.params.email;
+          const filter = { email: email };
+          const updateDoc = {
+            $set: { role: 'admin' },
+          };
+          const result = await userCollection.updateOne(filter, updateDoc);
+          res.send(result);
+        });
       
         //Check Admin (Get)
         app.get('/admin/:email', async(req, res) =>{
-            const email = req.params.email;
-            const user = await userCollection.findOne({email: email});
-            const isAdmin = user.role === 'admin';
-            res.send({admin: isAdmin})
+          const email = req.params.email;
+          const user = await userCollection.findOne({email: email});
+          const isAdmin = user.role === 'admin';
+          res.send({admin: isAdmin})
+        });
+
+        //Add a Product [imageBBLink check]
+        app.post('/product', verifyJWT, verifyAdmin, async (req, res) => {
+          const product = req.body;
+          const result = await productCollection.insertOne(product);
+          res.send(result);
+        });
+        
+        //Get all Product
+        app.get('/product', async (req, res) => {
+          const product = await productCollection.find().toArray();
+          res.send(product);
+        });
+
+        //Get a single Product
+        app.get('/product/:id', async (req, res)=>{
+          const id = req.params.id;
+          console.log(id);
+          const query = {_id: ObjectId(id)};
+          const product = await productCollection.findOne(query);
+          res.send(product);
         });
     }
     finally{
