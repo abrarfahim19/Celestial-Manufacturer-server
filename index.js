@@ -146,6 +146,19 @@ async function run() {
           const result = await orderCollection.insertOne(order);
           res.send(result);
         });
+
+        //Put Order
+        app.put('/order/:id', async (req, res) =>{
+          const id = req.params.id;
+          const paid = req.body;
+          const filter = {_id: ObjectId(id)};
+          const options = { upsert: true };
+          const updateDoc = {
+            $set: paid,
+          };
+          const result = await orderCollection.updateOne(filter, updateDoc, options);
+          res.send(result)
+        });
     }
     finally{
 
