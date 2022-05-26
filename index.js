@@ -120,6 +120,32 @@ async function run() {
           const product = await productCollection.findOne(query);
           res.send(product);
         });
+
+        //Update a single Product
+        app.put('/product/:id', async (req, res) =>{
+          const id = req.params.id;
+          const stock = req.body;
+          const filter = {_id: ObjectId(id)};
+          const options = { upsert: true };
+          const updateDoc = {
+            $set: stock,
+          };
+          const result = await productCollection.updateOne(filter, updateDoc, options);
+          res.send(result)
+        });
+
+        //Get Orders
+        app.get('/order', async (req, res) => {
+          const orders = await orderCollection.find().toArray();
+          res.send(orders);
+        });
+
+        //Post Order
+        app.post('/order', async (req, res) => {
+          const order = req.body;
+          const result = await orderCollection.insertOne(order);
+          res.send(result);
+        });
     }
     finally{
 
