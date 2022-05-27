@@ -82,7 +82,7 @@ async function run() {
         });
 
         //Get User
-        app.get('/user', verifyJWT, async (req, res) => {
+        app.get('/user', async (req, res) => {
             const users = await userCollection.find().toArray();
             console.log('db connected')
             res.send(users);
@@ -147,6 +147,14 @@ async function run() {
           const orders = await orderCollection.find().toArray();
           res.send(orders);
         });
+        
+        //Get Individuals Order
+        app.get('/order/:email', async (req, res) => {
+          const email = req.params.email;
+          const query = {email:email};
+          const result = await orderCollection.find(query).toArray();
+          res.send(result);
+        });
 
         //Post Order
         app.post('/order', async (req, res) => {
@@ -154,19 +162,42 @@ async function run() {
           const result = await orderCollection.insertOne(order);
           res.send(result);
         });
-
-        //Put Order
-        app.put('/order/:id', async (req, res) =>{
+        
+        //
+        app.get('/shipment/:id',async (req,res)=>{
           const id = req.params.id;
-          const paid = req.body;
-          const filter = {_id: ObjectId(id)};
+          const filters = {_id: ObjectId(id)};
+          const result = await orderCollection.find(filters).toArray();
+          res.send(result)
+        })
+
+        //
+        app.put('/shipment/:id',async (req,res)=>{
+          const id = req.params.id;
+          const filter = {_id:ObjectId('628f804aa4c74143a3e5b2c5')};
+          const status = req.body;
           const options = { upsert: true };
+          console.log(status);
           const updateDoc = {
-            $set: paid,
+            $set: status,
           };
           const result = await orderCollection.updateOne(filter, updateDoc, options);
-          res.send(result)
+          res.send(result);
         });
+
+        //Make Shipment
+        // app.put('shipment/:id', async (req, res) =>{
+        //   const id = req.params.id;
+        //   const status = req.body;
+        //   const filter = {_id: ObjectId(id)};
+        //   const options = { upsert: true };
+        //   const updateDoc = {
+        //     $set: status,
+        //   };
+        //   const result = await orderCollection.updateOne(filter, updateDoc, options);
+        //   res.send(result)
+        // });
+
     }
     finally{
 
