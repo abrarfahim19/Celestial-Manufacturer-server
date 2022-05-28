@@ -43,7 +43,7 @@ async function run() {
         const productCollection = client.db('celestial').collection('products');
         const orderCollection = client.db('celestial').collection('orders');
         const reviewCollection = client.db('celestial').collection('reviews');
-        const paymentCollection = client.db('celestial').collection('payments');
+        const meetingCollection = client.db('celestial').collection('meeting');
 
 
         //Admin Verify Middle Ware
@@ -243,6 +243,14 @@ async function run() {
           });
           res.send({ clientSecret: paymentIntent.client_secret });
         });
+
+        //Post Meeting
+        app.post('/meeting', async(req,res) =>{
+          const meeting = req.body;
+          const result = await meetingCollection.insertOne(meeting);
+          res.send({result, success:true});
+        });
+
     }
     finally{
 
