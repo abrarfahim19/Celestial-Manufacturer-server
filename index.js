@@ -79,7 +79,7 @@ async function run() {
             };
             const result = await userCollection.updateOne(filter, updateDoc, options);
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
-            res.send({ result, success:"true" });
+            res.send({ result, success:"true" ,token});
         });
 
         //Get User
@@ -141,6 +141,16 @@ async function run() {
           };
           const result = await productCollection.updateOne(filter, updateDoc, options);
           res.send(result)
+        });
+
+        //Delete a Single Product
+        app.delete('/product/:id',async(req, res)=>{
+          const id = req.params.id;
+          const query = {_id:ObjectId(id)};
+          const result = await productCollection.deleteOne(query);
+          if (result.deletedCount ===1){
+            res.send({result,success:true})
+          }
         });
 
         //Get Orders
