@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const stripe = require("stripe")("sk_test_51L45lUGe7ng92uQR3q1p5NMRKfTXQzKn9yu6QqQGfRouli1SLxD6H351BOGCU4Gc2efcMbWsey7dYgQ07IZtKMmX00X0eJEaCl");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
@@ -78,7 +79,7 @@ async function run() {
             };
             const result = await userCollection.updateOne(filter, updateDoc, options);
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
-            res.send({ result, token });
+            res.send({ result, success:"true" });
         });
 
         //Get User
@@ -174,7 +175,7 @@ async function run() {
         //
         app.put('/shipment/:id',async (req,res)=>{
           const id = req.params.id;
-          const filter = {_id:ObjectId('628f804aa4c74143a3e5b2c5')};
+          const filter = {_id:ObjectId(id)};
           const status = req.body;
           const options = { upsert: true };
           console.log(status);
@@ -184,6 +185,20 @@ async function run() {
           const result = await orderCollection.updateOne(filter, updateDoc, options);
           res.send(result);
         });
+
+        // Write Review
+        app.post('/review', async(req,res)=>{
+          const review = req.body;
+          const result = await reviewCollection.insertOne(review);
+          res.send(result);
+        });
+
+        // Get Review
+        app.get('/review',async (req,res)=>{
+          const query ={}
+          const result = await reviewCollection.find(query).toArray();
+          res.send(result);
+        })
 
         //Make Shipment
         // app.put('shipment/:id', async (req, res) =>{
@@ -197,7 +212,19 @@ async function run() {
         //   const result = await orderCollection.updateOne(filter, updateDoc, options);
         //   res.send(result)
         // });
-
+        
+        //Stripe Payment
+        app.post("/create-payment-intent", async (req, res) => {
+          const { total } = req.body;
+          console.log(total);
+          const amount = parseInt(total * 100);
+          const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount,
+            currency: "usd",
+            payment_method_types: ["card"],
+          });
+          res.send({ clientSecret: paymentIntent.client_secret });
+        });
     }
     finally{
 
